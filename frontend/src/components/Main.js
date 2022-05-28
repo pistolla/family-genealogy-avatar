@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { Route, Switch, Redirect } from "react-router";
-
+import React from "react";
+// import { BrowserRouter, Redirect, Route, Switch } from "react-router";
+import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
+import GenerateAvatar from "./GenerateAvatar";
+import Home from "./Home";
 import Login from "./Login";
 import Register from "./Register";
-import Home from "./Home";
 
 function Main(props) {
   const { isLoggedIn, handleLoggedIn } = props;
@@ -19,16 +20,24 @@ function Main(props) {
   const showHome = () => {
     return isLoggedIn ? <Home /> : <Redirect to="/login" />;
   };
+  const showGenerator = () => {
+    return isLoggedIn ? <GenerateAvatar /> : <Redirect to="/login" />;
+  }
   return (
     <div className="main">
-      <Switch>
-        <Route path="/" exact render={showLogin} />
-        <Route path="/login" render={showLogin} />
-        <Route path="/register" component={Register} />
-        <Route path="/home" render={showHome} />
-      </Switch>
+      <BrowserRouter>
+        <Switch>
+          <Route path="/" exact render={showLogin} />
+          <Route path="/login" render={showLogin} />
+          <Route path="/register" component={Register} />
+          <Route path="/home" render={showHome} />
+          <Route path="/mint" render={showGenerator} />
+        </Switch>
+      </BrowserRouter>
     </div>
   );
 }
+
+
 
 export default Main;

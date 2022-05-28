@@ -1,7 +1,7 @@
-import React, { useState } from "react";
 import { Input, Radio } from "antd";
-
+import React, { useState } from "react";
 import { SEARCH_KEY } from "../constants";
+
 
 const { Search } = Input;
 
@@ -20,7 +20,7 @@ function SearchBar(props) {
 
   const handleSearch = (value) => {
     if (searchType !== SEARCH_KEY.all && value === "") {
-      setError("Please enter your search keyword!");
+      setError("Please enter your search name!");
       return;
     }
     setError("");
@@ -30,7 +30,7 @@ function SearchBar(props) {
   return (
     <div className="search-bar">
       <Search
-        placeholder="enter search text"
+        placeholder="Search IPFS records"
         enterButton="Search"
         size="large"
         onSearch={handleSearch}
@@ -45,7 +45,7 @@ function SearchBar(props) {
       >
         <Radio value={SEARCH_KEY.all}>All</Radio>
         <Radio value={SEARCH_KEY.keyword}>Keyword</Radio>
-        <Radio value={SEARCH_KEY.user}>User</Radio>
+        <Radio value={SEARCH_KEY.user}>Family Name</Radio>
       </Radio.Group>
     </div>
   );

@@ -1,3 +1,19 @@
 .App {
-  text-align: center;
+  position: relative;
+}
+
+.svg__container {
+  overflow: hidden;
+  max-width: 100%;
+  position: absolute;
+  bottom: -1rem;
+  right: 0;
+  left: 0;
+  fill: rgba(219, 48, 48, 0.5)
+}
+
+@media (max-width:1200px) {
+  .svg__container {
+      bottom: -3rem
+  }
 }

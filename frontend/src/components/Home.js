@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { Tabs, message, Row, Col, Button } from "antd";
+import { Col, message, Row, Tabs } from "antd";
 import axios from "axios";
-
-import SearchBar from "./SearchBar";
-import PhotoGallery from "./PhotoGallery";
+import React, { useEffect, useState } from "react";
+import { BASE_URL, SEARCH_KEY, TOKEN_KEY } from "../constants";
 import CreatePostButton from "./CreatePostButton";
-import { SEARCH_KEY, BASE_URL, TOKEN_KEY } from "../constants";
+import GeneNetwork from "./GeneNetwork";
+import PhotoGallery from "./PhotoGallery";
+import SearchBar from "./SearchBar";
+
 
 const { TabPane } = Tabs;
 
 function Home(props) {
   const [posts, setPost] = useState([]);
-  const [activeTab, setActiveTab] = useState("image");
+  const [activeTab, setActiveTab] = useState("network");
   const [searchOption, setSearchOption] = useState({
     type: SEARCH_KEY.all,
     keyword: ""
@@ -105,22 +106,25 @@ function Home(props) {
     }, 3000);
   };
 
-  const operations = <CreatePostButton onShowPost={showPost} />;
+  const operations = <CreatePostButton type="head" onShowPost={showPost} /> ;//<span style={{ display: 'flex'}}><CreatePostButton type="head" onShowPost={showPost} />&nbsp;&nbsp;<CreatePostButton type="descendant" onShowPost={showPost} /></span>;
   return (
     <div className="home">
       <SearchBar handleSearch={handleSearch} />
       <div className="display">
         <Tabs
           onChange={(key) => setActiveTab(key)}
-          defaultActiveKey="image"
+          defaultActiveKey="network"
           activeKey={activeTab}
           tabBarExtraContent={operations}
         >
-          <TabPane tab="Images" key="image">
+          <TabPane tab="Human Genealogy" key="network">
+            <GeneNetwork />
+          </TabPane>
+          <TabPane tab="My Family" key="block">
             {renderPosts("image")}
           </TabPane>
-          <TabPane tab="Videos" key="video">
-            {renderPosts("video")}
+          <TabPane tab="Blockchain (TRX)" key="transaction">
+            {renderPosts("image")}
           </TabPane>
         </Tabs>
       </div>

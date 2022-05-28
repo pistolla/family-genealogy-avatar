@@ -1,6 +1,6 @@
-import React, { forwardRef } from "react";
-import { Form, Upload, Input } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
+import { Form, Input, Upload } from "antd";
+import React, { forwardRef } from "react";
 
 export const PostForm = forwardRef((props, formRef) => {
   const formItemLayout = {
@@ -14,21 +14,24 @@ export const PostForm = forwardRef((props, formRef) => {
     }
     return e && e.fileList;
   };
+
+  
+
   return (
     <Form name="validate_other" {...formItemLayout} ref={formRef}>
       <Form.Item
         name="description"
-        label="Message"
+        label="Head Name"
         rules={[
           {
             required: true,
-            message: "At least say something!"
+            message: "Enter the Patriach or Matriach full name!"
           }
         ]}
       >
         <Input />
       </Form.Item>
-      <Form.Item label="Dragger">
+      <Form.Item label="* Head Photo">
         <Form.Item
           name="uploadPost"
           valuePropName="fileList"
@@ -37,7 +40,7 @@ export const PostForm = forwardRef((props, formRef) => {
           rules={[
             {
               required: true,
-              message: "Please select the file to upload!"
+              message: "Please select the Patriach or Matriach passport photo!"
             }
           ]}
         >

@@ -6,3 +6,17 @@
 .login-form-button {
     width: 300px;
 }
+
+.login-container {
+    display: flex;
+    height: 90vh;
+}
+
+.login-left {
+    flex-grow: 1;
+}
+
+.login-right {
+    flex-grow: 1;
+    align-self: center;
+}
