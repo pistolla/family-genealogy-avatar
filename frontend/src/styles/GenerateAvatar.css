@@ -1,0 +1,221 @@
+:root {
+    --main-color: #4462a0;
+    --secondary-color: #ab5cc6;
+    --third-color: #0bbbf0;
+    --dark-color: #080013;
+    --white-color: #fff;
+    --white-low-text: #e3e3e3;
+    --silver-color: #666;
+    --letter-color: #4462a0;
+    --btn-secondary: #4462a0;
+    --main-font: "Montserrat", sans-serif
+}
+.form__container {
+    position: relative;
+    min-height: 80vh;
+    
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 400
+}
+
+.form__container--box {
+    margin-bottom: 10rem
+}
+
+.form__container--steps {
+    margin-bottom: 3rem;
+    overflow: hidden;
+    counter-reset: step;
+    
+}
+
+.form__container--steps li {
+    list-style: none;
+    width: 33.33%;
+    color: var(--silver-color);
+    font-size: 10px;
+    font-weight: 700;
+    position: relative;
+    float: left;
+    text-align: center;
+}
+
+.form__container--steps li:before {
+    content: counter(step);
+    counter-increment: step;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    display: block;
+    font-size: 10px;
+    color: var(--white-color);
+    background: var(--silver-color);
+    border-radius: 50%;
+    margin: 0 auto 5px;
+    z-index: 2
+}
+
+.form__container--steps li:after {
+    content: "";
+    width: 100%;
+    height: 2px;
+    background: var(--silver-color);
+    position: absolute;
+    left: -50%;
+    top: 20px;
+    z-index: -1
+}
+
+.form__container--steps li:first-child:after {
+    content: none
+}
+
+.form__container--steps li.active:after, .form__container--steps li.active:before {
+    background: var(--main-color)
+}
+
+.form__container .form {
+    margin-top: 2rem
+}
+
+.form__container .form__card {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 50vh;
+    width: 60vw;
+    max-width: 800px;
+    padding: 2rem 1rem 5rem;
+    border-radius: 5px;
+    background: var(--main-color);
+    color: var(--white-color);
+}
+
+.form__container .form__card .btn__container {
+    position: absolute;
+    bottom: -1rem;
+    display: flex;
+    justify-content: space-around
+}
+
+.form__container .form__card .display__user--data {
+    width: 80%;
+    text-align: left
+}
+
+.form__container .form__card .display__user--data .title-sub {
+    width: 100%;
+    text-align: center
+}
+
+.form__container .form__card .display__user--data p {
+    font-weight: 500;
+    margin-bottom: .5rem;
+    padding: 1rem .5rem
+}
+
+.form__container .form__card .display__user--data hr {
+    color: hsla(0, 0%, 100%, .5)
+}
+
+
+.btn-svg {
+    margin-left: 1rem;
+    width: 60px;
+    height: 60px;
+    bottom: -1rem;
+    display: block;
+    background: var(--white-color);
+    border: 5px solid var(--main-color);
+    padding: 1rem;
+    border-radius: 50%
+}
+
+.btn-svg:after, .btn-svg:before {
+    bottom: 0;
+    right: 0;
+    margin: auto;
+    border-radius: 50%;
+    width: 100%;
+    height: 100%
+}
+
+.btn-svg:hover:after, .btn-svg:hover:before {
+    transform: scale(1.5)
+}
+
+.btn-svg.send {
+    border-color: var(--secondary-color)
+}
+
+.btn-svg.send, .btn-svg.send:after, .btn-svg.send:before {
+    background: var(--secondary-color)
+}
+
+.btn-svg.send .svg-icon path {
+    fill: var(--white-color)
+}
+
+.svg-icon {
+    width: 20px;
+    height: 20px
+}
+
+.svg-icon path {
+    fill: var(--main-color)
+}
+
+.input__container {
+    width: 100%;
+    max-width: 500px;
+    text-align: left;
+    display: flex;
+    flex-direction: column
+}
+
+.input__container--label {
+    margin-top: 2rem;
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--white-color)
+}
+
+.input__container--field {
+    font-family: var(--main-font);
+    background: transparent;
+    border: 1px solid transparent;
+    border-block-end-color: var(--white-color);
+    padding: 1rem .5rem;
+    color: var(--white-color);
+    font-size: 1rem;
+    font-weight: 500
+}
+
+.input__container--list {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    font-size: .8rem
+}
+
+.form__design_avatar {
+    display: flex;
+    width: 100%;
+    height: 400px;
+    flex-direction: row;
+    flex-flow: wrap;
+}
+
+.form__design_avatar-media {
+    flex: 1;
+    height: 100%;
+}
+
+.form__design_avatar-media .img-avatar {
+    height: 100%;
+}

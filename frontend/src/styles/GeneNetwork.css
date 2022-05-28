@@ -1,0 +1,12 @@
+.genealogy-network {
+    width: 100%;
+    height: 100vh;
+}
+.genealogy-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: start;
+    flex-direction: column;
+}
