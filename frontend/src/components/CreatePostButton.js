@@ -42,21 +42,19 @@ class CreatePostButton extends Component {
             console.log(uniqueId)
             this.getBase64(originFileObj, (result) => {
               console.log(result)
-              this.storeFile(url, uniqueId, {"data":result})
-                .then(() => {
-                  console.log('stored files')
-                  files.push({
-                    id: uniqueId,
-                    name: description,
-                    description: description,
-                    file: "",
-                    status: "CREATED"
-                  });
-                  localStorage.setItem('files', JSON.stringify(files));
-                  this.setState({ confirmLoading: false });
-                  this.handleCancel();
-                  window.location = "/mint"
-                })
+              
+              files.push({
+                id: uniqueId,
+                name: description,
+                description: description,
+                file: result,
+                status: "CREATED"
+              });
+              localStorage.setItem('files', JSON.stringify(files));
+              console.log('stored files')
+              this.setState({ confirmLoading: false });
+              this.handleCancel();
+              window.location = "/mint"
             });
 
           } else {
@@ -68,10 +66,11 @@ class CreatePostButton extends Component {
       });
   };
 
-  storeFile = async (url, uniqueId, data) => {
-    var cache = await caches.open(uniqueId)
-    cache.put(url, data);
-  }
+  // storeFile = async (url, uniqueId, data) => {
+  //   var cache = await caches.open(uniqueId)
+  //   cache.put(url, data);
+  //   return data;
+  // }
 
   getBase64 = (file, cb) => {
     let reader = new FileReader();

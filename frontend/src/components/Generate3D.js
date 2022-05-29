@@ -1,10 +1,11 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as bodySegmentation from '@tensorflow-models/body-segmentation';
+import * as depthEstimation from '@tensorflow-models/depth-estimation';
 import '@tensorflow/tfjs-backend-webgl';
 import '@tensorflow/tfjs-converter';
 import * as tf from '@tensorflow/tfjs-core';
 import CameraControls from 'camera-controls';
-import React, { useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef } from "react";
 import * as THREE from 'three';
 import { proxy, useSnapshot } from 'valtio';
 
@@ -63,7 +64,7 @@ const transformValueRange = (fromMin, fromMax, toMin, toMax) => {
 const getDepth = (depthData, vid) => {
 	console.log("getDepth()")
 	console.log(depthData)
-	if(!depthData){
+	if (!depthData) {
 		return INVALID_DEPTH;
 	}
 	// vid: vertex id.
@@ -80,6 +81,7 @@ const getDepth = (depthData, vid) => {
 }
 
 const getIndices = (depthData) => {
+	console.log("getIndices")
 	let indices = [];
 	for (let i = 0; i < IMAGE_HEIGHT; i++) {
 		for (let j = 0; j < IMAGE_WIDTH; j++) {
@@ -122,6 +124,7 @@ const predictorState = proxy({
 	colors: [],
 	normals: [],
 	indices: [],
+	running: false,
 });
 
 function Generate3D({ image, active, nextStep, goBack }) {
@@ -135,8 +138,10 @@ function Generate3D({ image, active, nextStep, goBack }) {
 		vertices,
 		uvs,
 		colors,
-		normals } = useSnapshot(predictorState);
+		normals,
+		running } = useSnapshot(predictorState);
 	const masked = useRef()
+	const upload = useRef()
 	const proceed = e => {
 		e.preventDefault();
 		nextStep();
@@ -146,59 +151,64 @@ function Generate3D({ image, active, nextStep, goBack }) {
 		goBack();
 	};
 
-	
+	useEffect(() => {
+		upload.current.src = image;
+		console.log(upload.current)
+	})
 
-	// useLayoutEffect(() => {
-	// 	console.log("useLayoutEffect")
-	// 	for (let i = 0; i <= IMAGE_HEIGHT; ++i) {
-	// 		const y = i - IMAGE_HEIGHT * 0.5;
-	// 		for (let j = 0; j <= IMAGE_WIDTH; ++j) {
-	// 			const x = j - IMAGE_WIDTH * 0.5;
+	useLayoutEffect(() => {
+		console.log("useLayoutEffect")
+		for (let i = 0; i <= IMAGE_HEIGHT; ++i) {
+			const y = i - IMAGE_HEIGHT * 0.5;
+			for (let j = 0; j <= IMAGE_WIDTH; ++j) {
+				const x = j - IMAGE_WIDTH * 0.5;
 
-	// 			const vid = i * IMAGE_WIDTH + j;
-	// 			let depth = getDepth(depthData, vid);
+				const vid = i * IMAGE_WIDTH + j;
+				let depth = getDepth(depthData, vid);
 
-	// 			predictorState.vertices.push(
-	// 				x * 0.025, -y * 0.025,
-	// 				depth * -5.0);
-	// 				predictorState.normals.push(0, 0, 1);
+				predictorState.vertices.push(
+					x * 0.025, -y * 0.025,
+					depth * -5.0);
+				predictorState.normals.push(0, 0, 1);
 
-	// 			const r = (x / IMAGE_WIDTH) + 0.5;
-	// 			const g = (y / IMAGE_HEIGHT) + 0.5;
-	// 			predictorState.colors.push(r, g, 1);
+				const r = (x / IMAGE_WIDTH) + 0.5;
+				const g = (y / IMAGE_HEIGHT) + 0.5;
+				predictorState.colors.push(r, g, 1);
 
-	// 			predictorState.uvs.push(j / IMAGE_WIDTH, 1.0 - i / IMAGE_HEIGHT);
-	// 		}
-	// 	}
-	// 	predictorState.indices = getIndices(depthData);
-	// })
+				predictorState.uvs.push(j / IMAGE_WIDTH, 1.0 - i / IMAGE_HEIGHT);
+			}
+		}
+		predictorState.indices = getIndices(depthData);
+	}, []);
 	// Load Image in img
 
-	// useEffect(() => {
-	// 	console.log('useEffect()')
-	// 	const initEstimator = async () => {
-	// 		console.log("initEstimator()")
-	// 		try {
-	// 			segmentationModel =
-	// 				bodySegmentation.SupportedModels.MediaPipeSelfieSegmentation;
-	// 		} catch (e) {
-	// 			console.log('Error in loading segmentation model.');
-	// 		}
-	// 		try {
-	// 			segmenter = await bodySegmentation.createSegmenter(
-	// 				segmentationModel, { runtime: 'tfjs' });
-	// 			estimationModel = depthEstimation.SupportedModels.ARPortraitDepth;
-	// 		} catch (e) {
-	// 			console.log('Error in loading estimation model.');
-	// 		}
-	// 		estimator = await depthEstimation.createEstimator(estimationModel);
-	// 		predict();
-	// 	}
-	// 	console.log(image)
-	// 	if (image) {
-	// 		initEstimator();
-	// 	}
-	// }, [])
+	useEffect(() => {
+		console.log('useEffect()')
+		const initEstimator = async () => {
+			console.log("initEstimator()")
+			try {
+				predictorState.segmentationModel =
+					bodySegmentation.SupportedModels.MediaPipeSelfieSegmentation;
+			} catch (e) {
+				console.log('Error in loading segmentation model.');
+			}
+			try {
+				predictorState.segmenter = await bodySegmentation.createSegmenter(
+					segmentationModel, { runtime: 'tfjs' });
+				predictorState.estimationModel = depthEstimation.SupportedModels.ARPortraitDepth;
+				predictorState.estimator = await depthEstimation.createEstimator(estimationModel);
+				predict();
+			} catch (e) {
+				console.log('Error in loading estimation model.');
+			}
+		}
+		console.log(image)
+		if (image && !running) {
+			predictorState.running = true
+			initEstimator();
+
+		}
+	}, [])
 
 	/**
 	 * Runs the model.
@@ -314,7 +324,7 @@ function Generate3D({ image, active, nextStep, goBack }) {
 		<div className={`form__card ${active ? 'active' : ''}`}>
 			<div className="form__design_avatar">
 				<div className="form__design_avatar-media">
-					<img id="uploaded" className="img-avatar" src="" />
+					<img ref={upload} id="uploaded" className="img-avatar" />
 				</div>
 				<div className="form__design_avatar-media" style={{ position: "relative", width: RENDERER_WIDTH, height: RENDERER_HEIGHT }}>
 					<Canvas
@@ -323,8 +333,8 @@ function Generate3D({ image, active, nextStep, goBack }) {
 						gl={{ antialias: true, preserveDrawingBuffer: true }}
 						dpr={window.devicePixelRatio}>
 						<color attach="background" args={["#050505"]} />
-						<Background />
-						<Box />
+						{/* <Background />
+						<Box /> */}
 					</Canvas>
 				</div>
 			</div>
@@ -417,7 +427,7 @@ function Background(props) {
 	const mesh = useRef()
 	const canvasRef = useRef(document.getElementsByName("canvas"));
 	const imgRef = useRef(document.getElementById("uploaded"))
-	
+
 	const uniforms = {
 		iChannel0: { type: 't', value: new THREE.CanvasTexture(canvasRef) },
 		iChannel1: { type: 't', value: new THREE.CanvasTexture(imgRef) },

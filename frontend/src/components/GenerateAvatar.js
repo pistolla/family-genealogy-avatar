@@ -1,7 +1,5 @@
-import axios from "axios";
 import React, { useEffect } from "react";
 import { proxy, useSnapshot } from 'valtio';
-import { BASE_URL, TOKEN_KEY } from "../constants";
 import "../styles/GenerateAvatar.css";
 import Generate3D from "./Generate3D";
 import GenerateDetails from "./GenerateDetails";
@@ -14,48 +12,42 @@ const avatarObject = proxy({
     description: "",
     gltf: null,
     FormErrors: {},
-    message: ""
+    message: "",
+    loaded: false,
 })
 
 function GenerateAvatar(props) {
-    const { step, name, photo, description, gltf, FormErrors, message } = useSnapshot(avatarObject);
+    const { step, name, photo, description, gltf, FormErrors, message, loaded } = useSnapshot(avatarObject);
 
     useEffect(() => {
-        const files = JSON.parse(localStorage.getItem("files"))
-        if (files) {
-            files.forEach(file => {
-                if (file.status == "CREATED") {
-                    avatarObject.name = file.name;
-                    avatarObject.description = file.description;
-
-                    readCachedFile(file.id).then((base64Img) => {
-
-                    });
-                }
-            })
-        }
-    })
-
-    const readCachedFile = async (fileId) => {
-        if ('caches' in window) {
-            let url = 'http://localhost:3000'
-            // Opening given cache and putting our data into it
-            var responses = await caches.match(url);
-            if (responses.length > 0) {
-                responses.forEach(response => {
-                    console.log(response)
-                    return response;
+        if (!loaded) {
+            const files = JSON.parse(localStorage.getItem("files"))
+            if (files) {
+                files.forEach(file => {
+                    if (file.status == "CREATED") {
+                        avatarObject.name = file.name;
+                        avatarObject.description = file.description;
+                        let url = 'http://localhost:3000'
+                        avatarObject.photo = file.file
+                        console.log(avatarObject.photo)
+                        avatarObject.loaded = true
+                    }
                 })
             }
         }
-        return null;
-    }
+    })
+
+
     const nextStep = () => {
-        if (step == 1) {
-            console.log(validateDescription());
-            validateDescription() ? avatarObject.step = step + 1 : avatarObject.step = step;
-        } else {
-            avatarObject.step = step >= 4 ? 4 : step + 1
+        try {
+            if (step == 1) {
+                console.log(validateDescription());
+                validateDescription() ? avatarObject.step = step + 1 : avatarObject.step = step;
+            } else {
+                avatarObject.step = step >= 4 ? 4 : step + 1
+            }
+        } catch (e) {
+            console.log(e)
         }
     };
     //go back
@@ -73,41 +65,38 @@ function GenerateAvatar(props) {
         if (!files) {
             files = []
         }
-        if ('caches' in window) {
-            console.log('caches')
-            let uniqueId = new Date().getTime().toString(36) + new Date().getUTCMilliseconds();
-            let url = 'http://localhost:3000'
-            console.log(uniqueId)
-            getBase64(gltf, (result) => {
-                console.log(result)
-                storeFile(url, uniqueId, result)
-                    .then(() => {
-                        console.log('stored files')
-                        files.push({
-                            id: uniqueId,
-                            name: "",
-                            description: description,
-                            file: "",
-                            status: "GENERATED"
-                        });
-                        localStorage.setItem('files', JSON.stringify(files));
-                    })
+        let uniqueId = new Date().getTime().toString(36) + new Date().getUTCMilliseconds();
+        let url = 'http://localhost:3000'
+        console.log(uniqueId)
+        getBase64(gltf, (result) => {
+            console.log(result)
+
+            files.push({
+                id: uniqueId,
+                name: name,
+                description: description,
+                file: result,
+                status: "GENERATED"
             });
-        }
+
+            localStorage.setItem('files', JSON.stringify(files));
+            console.log('stored files')
+        });
     };
     const validateDescription = () => {
-        let descriptionValid = description != ""
-        avatarObject.FormErrors = {
-            email: descriptionValid === null ? 'Enter a valid description' : ''
-        }
+        // let descriptionValid = description != ""
+        // avatarObject.FormErrors = {
+        //     email: descriptionValid === null ? 'Enter a valid description' : ''
+        // }
 
-        return descriptionValid == null ? false : true;
+        // return descriptionValid == null ? false : true;
+        return true;
     };
 
-    const storeFile = async (url, uniqueId, data) => {
-        var cache = await caches.open(uniqueId)
-        cache.put(url, data);
-    }
+    // const storeFile = async (url, uniqueId, data) => {
+    //     var cache = await caches.open(uniqueId)
+    //     cache.put(url, data);
+    // }
 
     const getBase64 = (file, cb) => {
         let reader = new FileReader();

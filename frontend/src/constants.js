@@ -4,7 +4,7 @@ export const BASE_URL = 'http://localhost:3001';
 export const SEARCH_KEY = {
  all: 0,
  keyword: 1,
- user: 2
+ name: 2
 };
 
 
