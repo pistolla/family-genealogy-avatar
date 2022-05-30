@@ -35,7 +35,8 @@
     "react-scripts": "4.0.3",
     "three": "^0.140.2",
     "truffle-hdwallet-provider": "^1.0.17",
-    "valtio": "^1.6.1"
+    "valtio": "^1.6.1",
+    "web3": "^1.6.1"
   },
   "scripts": {
     "start": "react-scripts start",
