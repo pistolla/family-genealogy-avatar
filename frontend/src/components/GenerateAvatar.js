@@ -5,6 +5,7 @@ import Generate3D from "./Generate3D";
 import GenerateDetails from "./GenerateDetails";
 import GenerateTrx from "./GenerateTrx";
 import { TOKEN_KEY, contractABI, contractAddress } from "../constants";
+import useIpfsFactory from '../hooks/use-ipfs-factory.js';
 const web3 = require("../getWeb3.js");
 
 const avatarObject = proxy({
@@ -21,7 +22,7 @@ const avatarObject = proxy({
 
 function GenerateAvatar(props) {
     const { step, name, photo, description, gltf, FormErrors, message, url, loaded } = useSnapshot(avatarObject);
-
+    const { ipfs, ipfsInitError } = useIpfsFactory({ commands: ['id'] })
     useEffect(() => {
         if (!loaded) {
             const files = JSON.parse(localStorage.getItem("files"))
@@ -67,7 +68,7 @@ function GenerateAvatar(props) {
     const handleSubmit = async e => {
         console.log('handleSubmit()')
         const { success, status } = await mintNFT(url, name, description);
-        setStatus(status);
+        avatarObject.message = status;
         if (success) {
             const files = JSON.parse(localStorage.getItem("files"))
             console.log(files)
@@ -145,6 +146,7 @@ function GenerateAvatar(props) {
     };
 
     const addFile = async (fileName, json) => {
+        
         const filesAdded = await ipfs.add({ path: fileName, content: json }, {
             cidVersion: 1,
             hashAlg: 'sha2-256',
@@ -199,7 +201,7 @@ function GenerateAvatar(props) {
                                     textChange={handleChange}
                                     nextStep={nextStep}
                                     goBack={prevStep}
-                                    onMintPressed={handleMintPressed}
+                                    onMintPressed={handleSubmit}
                                 />
                             default:
                                 return <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>Return! <button className="btn btn-svg reverse" onClick={prevStep}>

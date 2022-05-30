@@ -106,7 +106,7 @@ function Home(props) {
     }, 3000);
   };
 
-  const operations = <CreatePostButton type="head" onShowPost={showPost} /> ;//<span style={{ display: 'flex'}}><CreatePostButton type="head" onShowPost={showPost} />&nbsp;&nbsp;<CreatePostButton type="descendant" onShowPost={showPost} /></span>;
+  const operations = <CreatePostButton type="head" onShowPost={showPost} />;//<span style={{ display: 'flex'}}><CreatePostButton type="head" onShowPost={showPost} />&nbsp;&nbsp;<CreatePostButton type="descendant" onShowPost={showPost} /></span>;
   return (
     <div className="home">
       <SearchBar handleSearch={handleSearch} />
@@ -124,7 +124,7 @@ function Home(props) {
             {renderPosts("image")}
           </TabPane>
           <TabPane tab="Blockchain (TRX)" key="transaction">
-            {renderPosts("image")}
+            {renderPosts("image")}  
           </TabPane>
         </Tabs>
       </div>

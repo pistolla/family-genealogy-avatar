@@ -5,7 +5,7 @@ import '@tensorflow/tfjs-backend-webgl';
 import '@tensorflow/tfjs-converter';
 import * as tf from '@tensorflow/tfjs-core';
 import CameraControls from 'camera-controls';
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from 'three';
 import { proxy, useSnapshot } from 'valtio';
 
@@ -81,7 +81,7 @@ const getDepth = (depthData, vid) => {
 }
 
 const getIndices = (depthData) => {
-	console.log("getIndices")
+
 	let indices = [];
 	for (let i = 0; i < IMAGE_HEIGHT; i++) {
 		for (let j = 0; j < IMAGE_WIDTH; j++) {
@@ -89,7 +89,7 @@ const getIndices = (depthData) => {
 			const b = i * (IMAGE_WIDTH + 1) + j;
 			const c = (i + 1) * (IMAGE_WIDTH + 1) + j;
 			const d = (i + 1) * (IMAGE_WIDTH + 1) + (j + 1);
-
+			console.log("getIndices")
 			let aDepth = getDepth(depthData, i * IMAGE_WIDTH + j + 1);
 			let bDepth = getDepth(depthData, i * IMAGE_WIDTH + j);
 			let cDepth = getDepth(depthData, (i + 1) * IMAGE_WIDTH + j);
@@ -111,7 +111,7 @@ const getIndices = (depthData) => {
 	return indices;
 }
 
-const predictorState = proxy({
+const stateProxy = proxy({
 	segmentationModel: null,
 	segmenter: null,
 	estimationModel: null,
@@ -125,6 +125,7 @@ const predictorState = proxy({
 	normals: [],
 	indices: [],
 	running: false,
+	initialized: false
 });
 
 function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
@@ -139,7 +140,8 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 		uvs,
 		colors,
 		normals,
-		running } = useSnapshot(predictorState);
+		running,
+		initialized } = useSnapshot(stateProxy);
 	const masked = useRef()
 	const upload = useRef()
 	const proceed = e => {
@@ -155,29 +157,31 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 		upload.current.src = image;
 	})
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		console.log("useLayoutEffect")
-		for (let i = 0; i <= IMAGE_HEIGHT; ++i) {
-			const y = i - IMAGE_HEIGHT * 0.5;
-			for (let j = 0; j <= IMAGE_WIDTH; ++j) {
-				const x = j - IMAGE_WIDTH * 0.5;
+		if (initialized) {
+			for (let i = 0; i <= IMAGE_HEIGHT; ++i) {
+				const y = i - IMAGE_HEIGHT * 0.5;
+				for (let j = 0; j <= IMAGE_WIDTH; ++j) {
+					const x = j - IMAGE_WIDTH * 0.5;
+					console.log("useLayoutEffect")
+					const vid = i * IMAGE_WIDTH + j;
+					let depth = getDepth(depthData, vid);
 
-				const vid = i * IMAGE_WIDTH + j;
-				let depth = getDepth(depthData, vid);
+					stateProxy.vertices.push(
+						x * 0.025, -y * 0.025,
+						depth * -5.0);
+					stateProxy.normals.push(0, 0, 1);
 
-				predictorState.vertices.push(
-					x * 0.025, -y * 0.025,
-					depth * -5.0);
-				predictorState.normals.push(0, 0, 1);
+					const r = (x / IMAGE_WIDTH) + 0.5;
+					const g = (y / IMAGE_HEIGHT) + 0.5;
+					stateProxy.colors.push(r, g, 1);
 
-				const r = (x / IMAGE_WIDTH) + 0.5;
-				const g = (y / IMAGE_HEIGHT) + 0.5;
-				predictorState.colors.push(r, g, 1);
-
-				predictorState.uvs.push(j / IMAGE_WIDTH, 1.0 - i / IMAGE_HEIGHT);
+					stateProxy.uvs.push(j / IMAGE_WIDTH, 1.0 - i / IMAGE_HEIGHT);
+				}
 			}
+			stateProxy.indices = getIndices(depthData);
 		}
-		predictorState.indices = getIndices(depthData);
 	}, []);
 	// Load Image in img
 
@@ -186,24 +190,26 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 		const initEstimator = async () => {
 			console.log("initEstimator()")
 			try {
-				predictorState.segmentationModel =
+				stateProxy.segmentationModel =
 					bodySegmentation.SupportedModels.MediaPipeSelfieSegmentation;
 			} catch (e) {
+				console.log(e)
 				console.log('Error in loading segmentation model.');
 			}
 			try {
-				predictorState.segmenter = await bodySegmentation.createSegmenter(
-					segmentationModel, { runtime: 'tfjs' });
-				predictorState.estimationModel = depthEstimation.SupportedModels.ARPortraitDepth;
-				predictorState.estimator = await depthEstimation.createEstimator(estimationModel);
+				stateProxy.segmenter = await bodySegmentation.createSegmenter(
+					stateProxy.segmentationModel, { runtime: 'tfjs' });
+				stateProxy.estimationModel = depthEstimation.SupportedModels.ARPortraitDepth;
+				stateProxy.estimator = await depthEstimation.createEstimator(stateProxy.estimationModel);
 				predict();
 			} catch (e) {
+				console.log(e);
 				console.log('Error in loading estimation model.');
 			}
 		}
 		console.log(image)
 		if (image && !running) {
-			predictorState.running = true
+			stateProxy.running = true
 			initEstimator();
 
 		}
@@ -215,9 +221,9 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 	const predict = () => {
 		console.log('predict()')
 		// Tests if the model is loaded.
-		if (segmentationModel == null || segmenter == null ||
-			estimationModel == null || estimator == null) {
-			alert('Model is not available!');
+		if (stateProxy.segmentationModel == null || stateProxy.segmenter == null ||
+			stateProxy.estimationModel == null || stateProxy.estimator == null) {
+			console.log('Model is not available!');
 			return;
 		}
 
@@ -240,7 +246,7 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 			const getPortraitDepth = async () => {
 				console.log('getPortraitDepth')
 				console.log(image)
-				const segmentation = await segmenter.segmentPeople(image);
+				const segmentation = await stateProxy.segmenter.segmentPeople(image);
 
 				// Convert the segmentation into a mask to darken the background.
 				const foregroundColor = { r: 0, g: 0, b: 0, a: 0 };
@@ -290,8 +296,8 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 						tf.add(
 							tf.mul(depth_rgb, transformBack.scale), transformBack.offset),
 						0, 1);
-					predictorState.depthData = rgbFinal;
-					tf.browser.toPixels(rgbFinal, masked);
+					stateProxy.depthData = rgbFinal;
+					tf.browser.toPixels(rgbFinal, mask.current);
 				});
 
 				depthMap.dispose();
@@ -305,13 +311,14 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 					for (let i = 0; i <= IMAGE_HEIGHT; ++i) {
 						for (let j = 0; j <= IMAGE_WIDTH; ++j) {
 							const vid = i * IMAGE_WIDTH + j;
+							console.log("getPortraitDepth")
 							let depth = getDepth(depthData, vid);
 							const vid2 = i * (IMAGE_WIDTH + 1) + j;
 							vertices[vid2 * 3 + 2] = depth * -5.0;
 						}
 					}
-					predictorState.indices = getIndices(predictorState.depthData);
-					predictorState.requireUpdate = true;
+					stateProxy.indices = getIndices(stateProxy.depthData);
+					stateProxy.requireUpdate = true;
 
 				}, 500);
 			};
@@ -376,14 +383,14 @@ function Box(props) {
 	console.log(canvasRef)
 	console.log(imgRef)
 	useFrame(() => {
-		if (mesh.current && predictorState.requireUpdate && predictorState.vertices) {
+		if (mesh.current && stateProxy.requireUpdate && stateProxy.vertices) {
 			// manually inject numbers into property. so that it won't trigger re-render.
 			const pos = mesh.current.geometry.getAttribute('position');
-			for (let i = 0; i <= predictorState.vertices.length; i++) {
-				pos.array[i] = predictorState.vertices[i]
+			for (let i = 0; i <= stateProxy.vertices.length; i++) {
+				pos.array[i] = stateProxy.vertices[i]
 			}
 			mesh.current.geometry.setAttribute('position', pos);
-			mesh.current.geometry.setIndex(predictorState.indices);
+			mesh.current.geometry.setIndex(stateProxy.indices);
 
 			mesh.current.material.uniforms.iChannel0.value.needsUpdate = true;
 			mesh.current.material.uniforms.iChannel1.value.needsUpdate = true;
@@ -394,7 +401,7 @@ function Box(props) {
 
 
 
-			predictorState.requireUpdate = false;
+			stateProxy.requireUpdate = false;
 		}
 	});
 	const uniforms = {
@@ -407,9 +414,9 @@ function Box(props) {
 	return (
 		<mesh ref={mesh} >
 			<bufferGeometry attach="geometry" args={[5000, 5000, 1, 1]} >
-				<bufferAttribute attachObject={["attributes", "position"]} count={predictorState.vertices.length / 3} array={predictorState.vertices} itemSize={3} />
-				<bufferAttribute attachObject={["attributes", "color"]} count={predictorState.colors.length / 3} array={predictorState.colors} itemSize={3} />
-				<bufferAttribute attachObject={["attributes", "uv"]} count={predictorState.uvs.length / 2} array={predictorState.uvs} itemSize={2} />
+				<bufferAttribute attachObject={["attributes", "position"]} count={stateProxy.vertices.length / 3} array={stateProxy.vertices} itemSize={3} />
+				<bufferAttribute attachObject={["attributes", "color"]} count={stateProxy.colors.length / 3} array={stateProxy.colors} itemSize={3} />
+				<bufferAttribute attachObject={["attributes", "uv"]} count={stateProxy.uvs.length / 2} array={stateProxy.uvs} itemSize={2} />
 			</bufferGeometry>
 			<shaderMaterial attach="material" args={[{
 				uniforms: uniforms,
