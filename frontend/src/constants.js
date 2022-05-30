@@ -6,5 +6,6 @@ export const SEARCH_KEY = {
  keyword: 1,
  name: 2
 };
-
+export const contractABI = require("NFTFamilyMemberAvatar-abi.json");
+export const contractAddress = "0x4C4a07F737Bf57F6632B6CAB089B78f62385aCaE";
 

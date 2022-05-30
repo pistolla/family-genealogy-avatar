@@ -13,11 +13,12 @@ const avatarObject = proxy({
     gltf: null,
     FormErrors: {},
     message: "",
+    url: "",
     loaded: false,
 })
 
 function GenerateAvatar(props) {
-    const { step, name, photo, description, gltf, FormErrors, message, loaded } = useSnapshot(avatarObject);
+    const { step, name, photo, description, gltf, FormErrors, message, url, loaded } = useSnapshot(avatarObject);
 
     useEffect(() => {
         if (!loaded) {
@@ -58,30 +59,23 @@ function GenerateAvatar(props) {
     const handleChange = input => e => {
         avatarObject[input] = e.target.value
     };
-    const handleSubmit = e => {
+    const handleSubmit = async e => {
         console.log('handleSubmit()')
-        const files = JSON.parse(localStorage.getItem("files"))
-        console.log(files)
-        if (!files) {
-            files = []
-        }
-        let uniqueId = new Date().getTime().toString(36) + new Date().getUTCMilliseconds();
-        let url = 'http://localhost:3000'
-        console.log(uniqueId)
-        getBase64(gltf, (result) => {
-            console.log(result)
-
-            files.push({
-                id: uniqueId,
-                name: name,
-                description: description,
-                file: result,
-                status: "GENERATED"
-            });
-
+        const { success, status } = await mintNFT(url, name, description);
+        setStatus(status);
+        if (success) {
+            const files = JSON.parse(localStorage.getItem("files"))
+            console.log(files)
+            if (!files) {
+                return;
+            }
+            files.forEach(file => {
+                if (file.name === name) {
+                    file.status = "GENERATED"
+                }
+            })
             localStorage.setItem('files', JSON.stringify(files));
-            console.log('stored files')
-        });
+        }
     };
     const validateDescription = () => {
         // let descriptionValid = description != ""
@@ -97,17 +91,65 @@ function GenerateAvatar(props) {
     //     var cache = await caches.open(uniqueId)
     //     cache.put(url, data);
     // }
+    const loadContract = async () => {
+		return new web3.eth.Contract(contractABI, contractAddress);
+	}
 
-    const getBase64 = (file, cb) => {
-        let reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function () {
-            cb(reader.result)
+    const mintNFT = async (url, name, description) => {
+        if (url.trim() == "" || name.trim() == "" || description.trim() == "") {
+            return {
+                success: false,
+                status: "❗Please make sure all fields are completed before minting.",
+            };
+        }
+
+        //make metadata
+        const metadata = new Object();
+        metadata.name = name;
+        metadata.image = url;
+        metadata.description = description;
+
+
+        const tokenURI = addFile(id, gltf);
+
+        window.contract = await new web3.eth.Contract(contractABI, contractAddress);
+
+        const transactionParameters = {
+            to: contractAddress, // Required except during contract publications.
+            from: window.ethereum.selectedAddress, // must match user's active address.
+            data: window.contract.methods
+                .mintNFT(window.ethereum.selectedAddress, tokenURI)
+                .encodeABI(),
         };
-        reader.onerror = function (error) {
-            console.log('Error: ', error);
-        };
-    }
+
+        try {
+            const txHash = await window.ethereum.request({
+                method: "eth_sendTransaction",
+                params: [transactionParameters],
+            });
+            return {
+                success: true,
+                status:
+                    "✅ Check out your transaction on Etherscan: https://ropsten.etherscan.io/tx/" +
+                    txHash,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                status: "😥 Something went wrong: " + error.message,
+            };
+        }
+    };
+
+    const addFile = async (fileName, bytes) => {
+        const filesAdded = await ipfs.add({ path: fileName, content: bytes }, {
+            progress: (len) => console.log("Uploading file..." + len)
+        });
+        console.log(filesAdded);
+        const fileHash = filesAdded.cid.string;
+
+        return fileHash;
+    };
 
     return (
         <div className="form__container">
@@ -143,10 +185,14 @@ function GenerateAvatar(props) {
                                     goBack={prevStep} />
                             case 3:
                                 return <GenerateTrx
+                                    name={name}
+                                    description={description}
                                     active={true}
                                     textChange={handleChange}
                                     nextStep={nextStep}
-                                    goBack={prevStep} />
+                                    goBack={prevStep}
+                                    onMintPressed={handleMintPressed}
+                                />
                             default:
                                 return <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>Return! <button className="btn btn-svg reverse" onClick={prevStep}>
                                     <svg className="svg-icon" viewBox="0 0 20 20">
