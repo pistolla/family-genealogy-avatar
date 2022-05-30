@@ -4,6 +4,8 @@ import "../styles/GenerateAvatar.css";
 import Generate3D from "./Generate3D";
 import GenerateDetails from "./GenerateDetails";
 import GenerateTrx from "./GenerateTrx";
+import { TOKEN_KEY, contractABI, contractAddress } from "../constants";
+const web3 = require("../getWeb3.js");
 
 const avatarObject = proxy({
     step: 1,
@@ -59,6 +61,9 @@ function GenerateAvatar(props) {
     const handleChange = input => e => {
         avatarObject[input] = e.target.value
     };
+    const handleGltfGenerated = (model) => {
+        avatarObject.gltf = model
+    }
     const handleSubmit = async e => {
         console.log('handleSubmit()')
         const { success, status } = await mintNFT(url, name, description);
@@ -108,9 +113,7 @@ function GenerateAvatar(props) {
         metadata.name = name;
         metadata.image = url;
         metadata.description = description;
-
-
-        const tokenURI = addFile(id, gltf);
+        const tokenURI = addFile("metadata.json", JSON.stringify(metadata));
 
         window.contract = await new web3.eth.Contract(contractABI, contractAddress);
 
@@ -141,8 +144,11 @@ function GenerateAvatar(props) {
         }
     };
 
-    const addFile = async (fileName, bytes) => {
-        const filesAdded = await ipfs.add({ path: fileName, content: bytes }, {
+    const addFile = async (fileName, json) => {
+        const filesAdded = await ipfs.add({ path: fileName, content: json }, {
+            cidVersion: 1,
+            hashAlg: 'sha2-256',
+            wrapWithDirectory: true,
             progress: (len) => console.log("Uploading file..." + len)
         });
         console.log(filesAdded);
@@ -181,11 +187,13 @@ function GenerateAvatar(props) {
                                 return <Generate3D
                                     active={true}
                                     image={photo}
+                                    onModelGenerated={handleGltfGenerated}
                                     nextStep={nextStep}
                                     goBack={prevStep} />
                             case 3:
                                 return <GenerateTrx
                                     name={name}
+                                    image={gltf}
                                     description={description}
                                     active={true}
                                     textChange={handleChange}

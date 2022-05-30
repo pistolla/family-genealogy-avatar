@@ -1,7 +1,8 @@
 import React from "react";
-const web3 = require("../getWeb3.js");
+import useIpfsFactory from '../hooks/use-ipfs-factory.js';
+import useIpfs from '../hooks/use-ipfs.js';
 
-function GenerateTrx({ name, description, textChange, onMintPressed, active, nextStep, goBack }) {
+function GenerateTrx({filePath, image, name, description, textChange, onMintPressed, active, nextStep, goBack }) {
 	const proceed = e => {
 		e.preventDefault();
 		nextStep();
@@ -12,7 +13,27 @@ function GenerateTrx({ name, description, textChange, onMintPressed, active, nex
 	};
 	const [walletAddress, setWallet] = useState("");
 	const [status, setStatus] = useState("");
+	const [ipfs_url, setIpfsUrl] = useState("");
+	const { ipfs, ipfsInitError } = useIpfsFactory({ commands: ['id'] })
+	useEffect(() => {
+        if (!ipfs) return;
 
+        const uploadFile = async (fileName, fileContent) => {
+            const filesAdded = await ipfs.add({ path: fileName, content: fileContent }, {
+				cidVersion: 1,
+				hashAlg: 'sha2-256',
+				wrapWithDirectory: true,
+				progress: (len) => console.log("Uploading file..." + len)
+			});
+			console.log(filesAdded);
+			const fileHash = "ipfs://"+filesAdded.cid.string;
+	
+			return fileHash;
+        }
+		if(ipfs_url != "") {
+        	setIpfsUrl(uploadFile(filePath, image));
+		}
+    }, [ipfs])
 	useEffect(async () => {
 		const { address, status } = await getCurrentWalletConnected();
 
@@ -163,7 +184,7 @@ function GenerateTrx({ name, description, textChange, onMintPressed, active, nex
 						disabled
 						placeholder="e.g. ipfs://gateway.pinata.cloud/ipfs/<hash>"
 						onChange={textChange('url')}
-						value={name}
+						value={ipfs_url}
 					/>
 				</div>
 				<input

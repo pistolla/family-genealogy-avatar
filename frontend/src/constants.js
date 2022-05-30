@@ -7,5 +7,5 @@ export const SEARCH_KEY = {
  name: 2
 };
 export const contractABI = require("NFTFamilyMemberAvatar-abi.json");
-export const contractAddress = "0x4C4a07F737Bf57F6632B6CAB089B78f62385aCaE";
+export const contractAddress = "0x5d1a0f1dCB9B13F3206D6F4ddDEc956afAD05AcE";
 

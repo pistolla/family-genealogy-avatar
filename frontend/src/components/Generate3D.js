@@ -127,7 +127,7 @@ const predictorState = proxy({
 	running: false,
 });
 
-function Generate3D({ image, active, nextStep, goBack }) {
+function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 	console.log("Generate3d")
 	const {
 		segmentationModel,
@@ -153,7 +153,6 @@ function Generate3D({ image, active, nextStep, goBack }) {
 
 	useEffect(() => {
 		upload.current.src = image;
-		console.log(upload.current)
 	})
 
 	useLayoutEffect(() => {
@@ -240,6 +239,7 @@ function Generate3D({ image, active, nextStep, goBack }) {
 
 			const getPortraitDepth = async () => {
 				console.log('getPortraitDepth')
+				console.log(image)
 				const segmentation = await segmenter.segmentPeople(image);
 
 				// Convert the segmentation into a mask to darken the background.
@@ -291,7 +291,7 @@ function Generate3D({ image, active, nextStep, goBack }) {
 							tf.mul(depth_rgb, transformBack.scale), transformBack.offset),
 						0, 1);
 					predictorState.depthData = rgbFinal;
-					// tf.browser.toPixels(rgbFinal, resultCanvas);
+					tf.browser.toPixels(rgbFinal, masked);
 				});
 
 				depthMap.dispose();
