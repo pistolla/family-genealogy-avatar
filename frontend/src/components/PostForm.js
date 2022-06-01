@@ -1,8 +1,27 @@
 import { InboxOutlined } from "@ant-design/icons";
 import { Form, Input, Upload } from "antd";
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState } from "react";
+import Cropper from "react-cropper";
+import "cropperjs/dist/cropper.css";
 
 export const PostForm = forwardRef((props, formRef) => {
+  const [image, setImage] = useState("");
+  const [cropper, setCropper] = useState();
+  const onChange = (e) => {
+    e.preventDefault();
+    let files;
+    if (e.dataTransfer) {
+      files = e.dataTransfer.files;
+    } else if (e.target) {
+      files = e.target.files;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImage(reader.result);
+    };
+    reader.readAsDataURL(files[0]);
+  };
+
   const formItemLayout = {
     labelCol: { span: 6 },
     wrapperCol: { span: 14 }
@@ -15,7 +34,11 @@ export const PostForm = forwardRef((props, formRef) => {
     return e && e.fileList;
   };
 
-  
+  const onCrop = () => {
+    if (cropper !== 'undefined') {
+      // cropper.getCroppedCanvas().toDataURL()
+    }
+  }
 
   return (
     <Form name="validate_other" {...formItemLayout} ref={formRef}>
@@ -52,6 +75,16 @@ export const PostForm = forwardRef((props, formRef) => {
               Click or drag file to this area to upload
             </p>
           </Upload.Dragger>
+          <Cropper
+            src={formRef.uploadPost[0].originFileObj}
+            style={{ height: 400, width: "100%" }}
+            initialAspectRatio={16 / 9}
+            guides={false}
+            crop={onCrop}
+            ref={props.cropperRef}
+            dragMode={'move'}
+            checkOrientation={true}
+          />
         </Form.Item>
       </Form.Item>
     </Form>

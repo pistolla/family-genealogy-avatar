@@ -123,7 +123,7 @@ function Home(props) {
           <TabPane tab="My Family" key="block">
             {renderPosts("image")}
           </TabPane>
-          <TabPane tab="Blockchain (TRX)" key="transaction">
+          <TabPane tab="FAM NFTs" key="transaction">
             {renderPosts("image")}  
           </TabPane>
         </Tabs>

@@ -4,7 +4,7 @@ import { PostForm } from "./PostForm";
 
 
 class CreatePostButton extends Component {
-
+  
   state = {
     visible: false,
     confirmLoading: false

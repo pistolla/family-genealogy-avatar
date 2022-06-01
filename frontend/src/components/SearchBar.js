@@ -44,8 +44,8 @@ function SearchBar(props) {
         className="search-type-group"
       >
         <Radio value={SEARCH_KEY.all}>All</Radio>
-        <Radio value={SEARCH_KEY.keyword}>Keyword</Radio>
         <Radio value={SEARCH_KEY.user}>Family Name</Radio>
+        <Radio value={SEARCH_KEY.keyword}>Family Relationship e.g. 'Jane Doe parents'</Radio>
       </Radio.Group>
     </div>
   );

@@ -164,14 +164,12 @@ function GenerateTrx({ filePath, image, name, description, textChange, onMintPre
 						<span>Connect Wallet</span>
 					)}
 				</button>
-				<p id="status" style={{ color: "red" }}>
+				<div id="status" style={{ color: "red" }}>
 					{status}
-				</p>
+				</div>
 				<br></br>
-				<h1 id="title">🧙‍♂️ Mint the FAM Avatar</h1>
-				<p>
-					Simply press "Mint."
-				</p>
+				<h1 id="title">🧙‍♂️ Mint the FAM Avatar <small>Simply press "Mint."</small></h1>
+				
 				<div className="input__container">
 					<label className="input__container--label" htmlFor="url">
 						IPFS Url?
@@ -195,8 +193,6 @@ function GenerateTrx({ filePath, image, name, description, textChange, onMintPre
 					onChange={textChange('address')}
 					value={walletAddress}
 				/>
-				<p>{name}</p>
-				<p>{description}</p>
 				<button id="mintButton" type="submit" onClick={onMintPressed}>
 					Mint NFT
 				</button>

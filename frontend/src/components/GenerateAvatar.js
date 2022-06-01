@@ -33,7 +33,6 @@ function GenerateAvatar(props) {
                         avatarObject.description = file.description;
                         let url = 'http://localhost:3000'
                         avatarObject.photo = file.file
-                        console.log(avatarObject.photo)
                         avatarObject.loaded = true
                     }
                 })

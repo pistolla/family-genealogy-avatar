@@ -7,7 +7,8 @@ import * as tf from '@tensorflow/tfjs-core';
 import CameraControls from 'camera-controls';
 import React, { useEffect, useRef } from "react";
 import * as THREE from 'three';
-import { proxy, useSnapshot } from 'valtio';
+import { proxy } from 'valtio';
+import test from "../assets/images/test.png";
 
 CameraControls.install({ THREE: THREE });
 
@@ -61,16 +62,14 @@ const transformValueRange = (fromMin, fromMax, toMin, toMax) => {
 	return { scale, offset };
 }
 
-const getDepth = (depthData, vid) => {
-	console.log("getDepth()")
-	console.log(depthData)
-	if (!depthData) {
+const getDepth = (dData, vid) => {
+	if (!dData) {
 		return INVALID_DEPTH;
 	}
 	// vid: vertex id.
-	const depth0 = depthData[vid * 4 + 0];
-	const depth1 = depthData[vid * 4 + 1];
-	const depth2 = depthData[vid * 4 + 2];
+	const depth0 = dData[vid * 4 + 0];
+	const depth1 = dData[vid * 4 + 1];
+	const depth2 = dData[vid * 4 + 2];
 	let depth = depth0 * 255 * 255 + depth1 * 255 + depth2;
 	depth = depth / 255 / 255 / 255;
 	if (isNaN(depth)) {
@@ -80,7 +79,7 @@ const getDepth = (depthData, vid) => {
 	return depth;
 }
 
-const getIndices = (depthData) => {
+const getIndices = (dData) => {
 
 	let indices = [];
 	for (let i = 0; i < IMAGE_HEIGHT; i++) {
@@ -89,11 +88,10 @@ const getIndices = (depthData) => {
 			const b = i * (IMAGE_WIDTH + 1) + j;
 			const c = (i + 1) * (IMAGE_WIDTH + 1) + j;
 			const d = (i + 1) * (IMAGE_WIDTH + 1) + (j + 1);
-			console.log("getIndices")
-			let aDepth = getDepth(depthData, i * IMAGE_WIDTH + j + 1);
-			let bDepth = getDepth(depthData, i * IMAGE_WIDTH + j);
-			let cDepth = getDepth(depthData, (i + 1) * IMAGE_WIDTH + j);
-			let dDepth = getDepth(depthData, (i + 1) * IMAGE_WIDTH + j + 1);
+			let aDepth = getDepth(dData, i * IMAGE_WIDTH + j + 1);
+			let bDepth = getDepth(dData, i * IMAGE_WIDTH + j);
+			let cDepth = getDepth(dData, (i + 1) * IMAGE_WIDTH + j);
+			let dDepth = getDepth(dData, (i + 1) * IMAGE_WIDTH + j + 1);
 			// generate two faces (triangles) per iteration
 
 			if (aDepth != INVALID_DEPTH && bDepth != INVALID_DEPTH &&
@@ -130,43 +128,47 @@ const stateProxy = proxy({
 
 function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 	console.log("Generate3d")
-	const {
-		segmentationModel,
-		segmenter,
-		estimationModel,
-		estimator,
-		depthData,
-		vertices,
-		uvs,
-		colors,
-		normals,
-		running,
-		initialized } = useSnapshot(stateProxy);
+	stateProxy.running = false;
+	stateProxy.initialized = false;
+	// const {
+	// 	segmentationModel,
+	// 	segmenter,
+	// 	estimationModel,
+	// 	estimator,
+	// 	depthData,
+	// 	vertices,
+	// 	uvs,
+	// 	colors,
+	// 	normals,
+	// 	running,
+	// 	initialized } = useSnapshot(stateProxy);
 	const masked = useRef()
 	const upload = useRef()
 	const proceed = e => {
+		console.log("Next pressed");
 		e.preventDefault();
 		nextStep();
 	};
 	const revert = e => {
+		console.log("Back pressed");
 		e.preventDefault();
 		goBack();
 	};
 
-	useEffect(() => {
-		upload.current.src = image;
-	})
+	// useEffect(() => {
+	// 	upload.current.src = image;
+	// })
 
 	useEffect(() => {
-		console.log("useLayoutEffect")
-		if (initialized) {
+		console.log("useEffect")
+		if (!stateProxy.initialized) {
+			console.log("initialize")
 			for (let i = 0; i <= IMAGE_HEIGHT; ++i) {
 				const y = i - IMAGE_HEIGHT * 0.5;
 				for (let j = 0; j <= IMAGE_WIDTH; ++j) {
 					const x = j - IMAGE_WIDTH * 0.5;
-					console.log("useLayoutEffect")
 					const vid = i * IMAGE_WIDTH + j;
-					let depth = getDepth(depthData, vid);
+					let depth = getDepth(stateProxy.depthData, vid);
 
 					stateProxy.vertices.push(
 						x * 0.025, -y * 0.025,
@@ -180,7 +182,8 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 					stateProxy.uvs.push(j / IMAGE_WIDTH, 1.0 - i / IMAGE_HEIGHT);
 				}
 			}
-			stateProxy.indices = getIndices(depthData);
+			stateProxy.indices = getIndices(stateProxy.depthData);
+			stateProxy.initialized = true;
 		}
 	}, []);
 	// Load Image in img
@@ -207,11 +210,9 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 				console.log('Error in loading estimation model.');
 			}
 		}
-		console.log(image)
-		if (image && !running) {
+		if (image && !stateProxy.running) {
 			stateProxy.running = true
 			initEstimator();
-
 		}
 	}, [])
 
@@ -245,8 +246,7 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 
 			const getPortraitDepth = async () => {
 				console.log('getPortraitDepth')
-				console.log(image)
-				const segmentation = await stateProxy.segmenter.segmentPeople(image);
+				const segmentation = await stateProxy.segmenter.segmentPeople(upload.current);
 
 				// Convert the segmentation into a mask to darken the background.
 				const foregroundColor = { r: 0, g: 0, b: 0, a: 0 };
@@ -265,11 +265,11 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 				// and maskBlurAmount set to 3, this will darken the background and blur
 				// the darkened background's edge.
 				await bodySegmentation.drawMask(
-					masked, image, backgroundDarkeningMask, opacity, maskBlurAmount,
+					masked, upload.current, backgroundDarkeningMask, opacity, maskBlurAmount,
 					flipHorizontal);
 
-				const result = await estimator.estimateDepth(
-					image, { minDepth: 0.2, maxDepth: 0.9 });
+				const result = await stateProxy.estimator.estimateDepth(
+					upload.current, { minDepth: 0.2, maxDepth: 0.9 });
 				const depthMap = await result.toTensor();
 
 				tf.tidy(() => {
@@ -297,7 +297,8 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 							tf.mul(depth_rgb, transformBack.scale), transformBack.offset),
 						0, 1);
 					stateProxy.depthData = rgbFinal;
-					tf.browser.toPixels(rgbFinal, mask.current);
+					console.log(masked.current)
+					tf.browser.toPixels(rgbFinal, masked.current);
 				});
 
 				depthMap.dispose();
@@ -312,9 +313,9 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 						for (let j = 0; j <= IMAGE_WIDTH; ++j) {
 							const vid = i * IMAGE_WIDTH + j;
 							console.log("getPortraitDepth")
-							let depth = getDepth(depthData, vid);
+							let depth = getDepth(stateProxy.depthData, vid);
 							const vid2 = i * (IMAGE_WIDTH + 1) + j;
-							vertices[vid2 * 3 + 2] = depth * -5.0;
+							stateProxy.vertices[vid2 * 3 + 2] = depth * -5.0;
 						}
 					}
 					stateProxy.indices = getIndices(stateProxy.depthData);
@@ -331,7 +332,8 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 		<div className={`form__card ${active ? 'active' : ''}`}>
 			<div className="form__design_avatar">
 				<div className="form__design_avatar-media">
-					<img ref={upload} id="uploaded" className="img-avatar" />
+					<img ref={upload} id="uploaded" className="img-avatar" src={test} height={RENDERER_HEIGHT} width={RENDERER_WIDTH} />
+
 				</div>
 				<div className="form__design_avatar-media" style={{ position: "relative", width: RENDERER_WIDTH, height: RENDERER_HEIGHT }}>
 					<Canvas
