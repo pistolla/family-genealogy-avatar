@@ -7,6 +7,7 @@ import "cropperjs/dist/cropper.css";
 export const PostForm = forwardRef((props, formRef) => {
   const [image, setImage] = useState("");
   const [cropper, setCropper] = useState();
+  const [uploaded, setUploaded] = useState(false)
   const onChange = (e) => {
     e.preventDefault();
     let files;
@@ -36,7 +37,7 @@ export const PostForm = forwardRef((props, formRef) => {
 
   const onCrop = () => {
     if (cropper !== 'undefined') {
-      // cropper.getCroppedCanvas().toDataURL()
+      formRef.uploadPost[0].originFileObj = cropper.getCroppedCanvas().toDataURL()
     }
   }
 
@@ -67,24 +68,27 @@ export const PostForm = forwardRef((props, formRef) => {
             }
           ]}
         >
-          <Upload.Dragger name="files" beforeUpload={() => false}>
-            <p className="ant-upload-drag-icon">
-              <InboxOutlined />
-            </p>
-            <p className="ant-upload-text">
-              Click or drag file to this area to upload
-            </p>
-          </Upload.Dragger>
-          <Cropper
-            src={formRef.uploadPost[0].originFileObj}
-            style={{ height: 400, width: "100%" }}
-            initialAspectRatio={16 / 9}
-            guides={false}
-            crop={onCrop}
-            ref={props.cropperRef}
-            dragMode={'move'}
-            checkOrientation={true}
-          />
+          {uploaded ?
+            <Cropper
+              src={formRef.uploadPost[0].originFileObj}
+              style={{ height: 400, width: "100%" }}
+              initialAspectRatio={16 / 9}
+              guides={false}
+              crop={onCrop}
+              ref={props.cropperRef}
+              dragMode={'move'}
+              checkOrientation={true}
+              onInitialized={(instance) => setCropper(instance)}
+            /> :
+            <Upload.Dragger name="files" beforeUpload={() => false}>
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">
+                Click or drag file to this area to upload
+              </p>
+            </Upload.Dragger>
+          }
         </Form.Item>
       </Form.Item>
     </Form>
