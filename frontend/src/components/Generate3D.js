@@ -246,6 +246,7 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 
 			const getPortraitDepth = async () => {
 				console.log('getPortraitDepth')
+				console.log(upload.current)
 				const segmentation = await stateProxy.segmenter.segmentPeople(upload.current);
 
 				// Convert the segmentation into a mask to darken the background.
@@ -267,12 +268,13 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 				await bodySegmentation.drawMask(
 					masked, upload.current, backgroundDarkeningMask, opacity, maskBlurAmount,
 					flipHorizontal);
-
+					console.log('drawMask')
 				const result = await stateProxy.estimator.estimateDepth(
 					upload.current, { minDepth: 0.2, maxDepth: 0.9 });
 				const depthMap = await result.toTensor();
-
+				console.log('depthMap')
 				tf.tidy(() => {
+					console.log('tidy')
 					const depthMap3D = tf.expandDims(depthMap, 2);
 					const transformNormalize =
 						transformValueRange(0, 1, 0, 255 * 255 * 255);
@@ -289,9 +291,11 @@ function Generate3D({ image, onModelGenerated, active, nextStep, goBack }) {
 					let depth_rgb = tf.concat([depth_r, depth_g, depth_b], 2);
 
 					// Renders the result on a canvas.
+					console.log('renderresult')
 					const transformBack = transformValueRange(0, 255, 0, 1);
 
 					// Converts back to 0-1.
+					console.log('converstToZeroOnes')
 					const rgbFinal = tf.clipByValue(
 						tf.add(
 							tf.mul(depth_rgb, transformBack.scale), transformBack.offset),

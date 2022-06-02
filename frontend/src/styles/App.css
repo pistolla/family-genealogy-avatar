@@ -1,6 +1,10 @@
 .App {
   position: relative;
 }
+iframe
+{
+display:none
+}
 
 .svg__container {
   overflow: hidden;

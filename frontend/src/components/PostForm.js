@@ -1,44 +1,39 @@
 import { InboxOutlined } from "@ant-design/icons";
 import { Form, Input, Upload } from "antd";
+import "cropperjs/dist/cropper.css";
 import React, { forwardRef, useState } from "react";
 import Cropper from "react-cropper";
-import "cropperjs/dist/cropper.css";
 
 export const PostForm = forwardRef((props, formRef) => {
   const [image, setImage] = useState("");
   const [cropper, setCropper] = useState();
-  const [uploaded, setUploaded] = useState(false)
-  const onChange = (e) => {
-    e.preventDefault();
-    let files;
-    if (e.dataTransfer) {
-      files = e.dataTransfer.files;
-    } else if (e.target) {
-      files = e.target.files;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImage(reader.result);
-    };
-    reader.readAsDataURL(files[0]);
-  };
-
+  const [uploaded, setUploaded] = useState(false);
+  
   const formItemLayout = {
     labelCol: { span: 6 },
     wrapperCol: { span: 14 }
   };
   const normFile = (e) => {
     console.log("Upload event:", e);
+    setUploaded(true);
+    setImage(URL.createObjectURL(e.fileList[0].originFileObj))
+
     if (Array.isArray(e)) {
       return e;
     }
     return e && e.fileList;
   };
 
-  const onCrop = () => {
+  const onCrop = (e) => {
+    e.preventDefault();
     if (cropper !== 'undefined') {
       formRef.uploadPost[0].originFileObj = cropper.getCroppedCanvas().toDataURL()
     }
+  }
+
+  const reUpload = (e) => {
+    e.preventDefault();
+    setUploaded(false);
   }
 
   return (
@@ -70,11 +65,10 @@ export const PostForm = forwardRef((props, formRef) => {
         >
           {uploaded ?
             <Cropper
-              src={formRef.uploadPost[0].originFileObj}
+              src={image}
               style={{ height: 400, width: "100%" }}
               initialAspectRatio={16 / 9}
               guides={false}
-              crop={onCrop}
               ref={props.cropperRef}
               dragMode={'move'}
               checkOrientation={true}
@@ -90,6 +84,9 @@ export const PostForm = forwardRef((props, formRef) => {
             </Upload.Dragger>
           }
         </Form.Item>
+      </Form.Item>
+      <Form.Item>
+        {uploaded ? <button style={{ float: 'right' }} onClick={onCrop}>crop</button> : image != "" ? <button style={{ float: 'right' }} onClick={reUpload}>change Image</button> : ""}
       </Form.Item>
     </Form>
   );
